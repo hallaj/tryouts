@@ -1,0 +1,16 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:latest
+  rabbitmq:
+    image: rabbitmq:management
+  master:
+    build: .
+    command: /srv/master.py
+    depends_on:
+      - postgres
+      - rabbitmq
+    ports:
+      - "80:5000"
+    volumes:
+      - ".:/srv"
