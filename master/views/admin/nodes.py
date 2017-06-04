@@ -5,6 +5,7 @@ from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from ...models import db
 from ...models.nodes import Nodes
+from ...queues import Queues
 
 admin_nodes = Blueprint("admin_nodes", __name__)
 
@@ -20,6 +21,10 @@ def admin_nodes_index():
         node = Nodes(name=name)
         db.session.add(node)
         db.session.commit()
+
+        queue = Queues()
+        queue.declare(name)
+        queue.close()
 
     records = Nodes.query.all()
     return render_template("admin/nodes/index.tpl", nodes=records)
@@ -37,7 +42,13 @@ def admin_nodes_delete():
     if not node or node.count() != 1:
         abort(500)
 
-    db.session.delete(node.one())
+    node = node.one()
+    name = node.name
+
+    db.session.delete(node)
     db.session.commit()
+
+    queue = Queues()
+    queue.delete(name)
 
     return redirect(url_for("admin_nodes.admin_nodes_index"))

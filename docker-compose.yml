@@ -4,6 +4,8 @@ services:
     image: postgres:latest
   rabbitmq:
     image: rabbitmq:management
+    ports:
+      - "15672:15672"
   master:
     build: .
     command: /srv/master.py
