@@ -8,7 +8,7 @@ services:
       - "15672:15672"
   master:
     build: .
-    command: /srv/master.py
+    command: /srv/master.py start
     depends_on:
       - postgres
       - rabbitmq
