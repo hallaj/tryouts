@@ -14,7 +14,8 @@ config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 def bootstrap():
     from master.models import db
-    from master.models.nodes import Nodes
+    from master.models.node import Node
+    from master.models.user import User
 
     app = setup(**config)
     db.init_app(app=app)

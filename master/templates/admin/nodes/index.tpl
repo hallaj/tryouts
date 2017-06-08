@@ -25,7 +25,7 @@
             <tbody>
               {% for node in nodes %}
               <tr>
-                <td>{{ node.name }}</td>
+                <td><a href="{{ url_for("admin_nodes.admin_nodes_info", node_id=node.id_) }}">{{ node.name }}</a></td>
                 <td>
                   <form action="{{ url_for("admin_nodes.admin_nodes_delete") }}" method="post">
                     <input name="node_id" type="hidden" value="{{ node.id_ }}" />
@@ -51,13 +51,18 @@
 
         <div class="section">
           <form action="{{ url_for('admin_nodes.admin_nodes_index') }}" method="post">
-            <div class="field has-addons">
+            <div class="field">
+              <label class="label">Node</label>
+
               <p class="control has-icons-left">
                 <input class="input" name="node_name" type="text" />
                 <span class="icon is-small is-left">
                   <i class="fa fa-cube"></i>
                 </span>
               </p>
+            </div>
+
+            <div class="field">
               <p class="control">
                 <input class="button" type="submit" value="Add" />
               </p>

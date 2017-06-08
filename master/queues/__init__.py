@@ -32,3 +32,7 @@ class Queues(object):
         for component in components:
             queue = name + "_" + component
             self.channel.queue_delete(queue=queue)
+
+    def publish(self, exchange, routing_key, body):
+        self.channel.basic_publish(exchange=exchange, routing_key=routing_key,
+                                   body=body)
