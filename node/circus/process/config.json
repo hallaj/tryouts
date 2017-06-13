@@ -1,0 +1,6 @@
+{
+  "mq_host": "rabbitmq",
+  "mq_user": "admin",
+  "mq_pass": "admin",
+  "node_name": "node1"
+}

@@ -37,7 +37,7 @@
               <tbody>
                 {% for user in users %}
                 <tr>
-                  <td>{{ user.name }}</td>
+                  <td><a href="{{ url_for('admin_users.admin_users_edit', user_id=user.id_) }}">{{ user.name }}</a></td>
                   <td>{{ user.username }}</td>
                 </tr>
                 {% endfor %}

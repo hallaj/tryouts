@@ -16,3 +16,13 @@ services:
       - "80:5000"
     volumes:
       - ".:/srv"
+  node:
+    build: .
+    command: /srv/node.py start
+    depends_on:
+      - postgres
+      - rabbitmq
+    ports:
+      - "5000:5000"
+    volumes:
+      - ".:/srv"

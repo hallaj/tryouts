@@ -6,6 +6,7 @@ from . import db
 
 class User(db.Model):
     __tablename__ = "user"
+    __table_args__ = (db.UniqueConstraint("username", "node_id"), {})
 
     id_ = db.Column("id", db.Integer, primary_key=True)
     name = db.Column("name", db.String(100))
