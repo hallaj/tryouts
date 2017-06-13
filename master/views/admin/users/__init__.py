@@ -72,7 +72,7 @@ def admin_users_edit(user_id):
         queue = Queues()
         queue.publish(node.name, "users", user)
 
-        return redirect(url_for("admin_nodes.admin_nodes_info", node_id=node.id_))
-
+        return redirect(url_for("admin_nodes.admin_nodes_info",
+                                node_id=node.id_))
 
     return render_template("admin/users/edit.tpl", user=user)

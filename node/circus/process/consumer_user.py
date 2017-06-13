@@ -41,7 +41,8 @@ config_file = join(dirname(__file__), "config.json")
 config = loads(open(config_file).read())
 
 credentials = PlainCredentials(config["mq_user"], config["mq_pass"])
-parameters = ConnectionParameters(host=config["mq_host"], credentials=credentials)
+parameters = ConnectionParameters(host=config["mq_host"],
+                                  credentials=credentials)
 connection = BlockingConnection(parameters)
 
 channel = connection.channel()
@@ -53,6 +54,7 @@ def callback(ch, method, properties, body):
     insert(**data)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
+
 
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(callback, queue="%s_users" % config["node_name"])
