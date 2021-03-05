@@ -1,0 +1,16 @@
+### DISCLAIMER ###
+### PLEASE DO NOT DO THIS ###
+### IT'S SIMPLY NOT SMART TO COMMIT SECRETS! ###
+### SINCE THIS IS A TRYOUY, THIS IS WHY THIS IS HERE! ###
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nextcloud-env
+  namespace: nextcloud
+type: Opaque
+stringData:
+  MYSQL_USER: nextcloud
+  MYSQL_PASSWORD: nextcloud
+  MYSQL_DATABASE: nextcloud
+  MYSQL_ROOT_PASSWORD: root-password
