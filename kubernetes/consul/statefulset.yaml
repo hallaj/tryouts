@@ -1,0 +1,150 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: consul
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consul-conf
+  namespace: consul
+data:
+  consul.json: |
+    {
+      "bootstrap_expect": 3,
+      "data_dir": "/consul/data",
+      "datacenter": "k8s-ams",
+      "domain": "inu.io.internal",
+      "server": true
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: consul-server
+  namespace: consul
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: consul
+  name: consul-server
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: consul
+  name: consul-server
+subjects:
+  - kind: ServiceAccount
+    name: consul-server
+    namespace: consul
+roleRef:
+  kind: Role
+  name: consul-server
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: consul
+  namespace: consul
+spec:
+  serviceName: consul
+  replicas: 3
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      labels:
+        app: consul
+    spec:
+      serviceAccount: consul-server
+      containers:
+        - name: consul
+          image: consul:latest
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          args:
+            - "consul"
+            - "agent"
+            - "-advertise=$(POD_IP)"
+            - "-disable-host-node-id"
+            - "-retry-join"
+            - "provider=k8s namespace=$(K8S_NAMESPACE) label_selector=\"app=consul\""
+            - "-config-file=/etc/consul.d/config.json"
+          ports:
+            - containerPort: 8300
+            - containerPort: 8301
+            - containerPort: 8500
+            - containerPort: 8600
+          volumeMounts:
+            - name: consul-conf
+              mountPath: /etc/consul.d/config.json
+              subPath: config.json
+              readOnly: true
+            - name: consul-data
+              mountPath: /consul/data
+      volumes:
+        - name: consul-conf
+          configMap:
+            name: consul-conf
+            items:
+              - key: consul.json
+                path: config.json
+  volumeClaimTemplates:
+    - metadata:
+        name: consul-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consul
+  namespace: consul
+spec:
+  selector:
+    app: consul
+  ports:
+    - name: rpc-server
+      port: 8300
+      protocol: TCP
+      targetPort: 8300
+    - name: serf-lan-tcp
+      port: 8301
+      protocol: TCP
+      targetPort: 8301
+    - name: serf-lan-udp
+      port: 8301
+      protocol: UDP
+      targetPort: 8301
+    - name: http-api
+      port: 8500
+      protocol: TCP
+      targetPort: 8500
+    - name: dns-tcp
+      port: 8600
+      protocol: TCP
+      targetPort: 8600
+    - name: dns-udp
+      port: 8600
+      protocol: UDP
+      targetPort: 8600
