@@ -1,0 +1,146 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-conf
+  namespace: vault
+data:
+  vault_conf: |
+    listener "tcp" {
+      address = "0.0.0.0:8200"
+      cluster_address = "0.0.0.0:8201"
+      tls_disable = "true"
+    }
+
+    storage "consul" {
+      address = "127.0.0.1:8500"
+      path    = "vault"
+    }
+
+    ui = true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consul-conf
+  namespace: vault
+data:
+  consul.json: |
+    {
+      "data_dir": "/consul/data",
+      "datacenter": "k8s-ams",
+      "domain": "inu.io.internal",
+      "server": true
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vault-data
+  namespace: vault
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+        - name: vault
+          image: 192.168.49.2:5000/hallaj/tryouts/kubernetes/vault:v0.1
+          command: ["/startup.sh"]
+          env:
+            - name: VAULT_ADDR
+              value: "http://127.0.0.1:8200"
+          ports:
+            - containerPort: 8200
+            - containerPort: 8201
+            - containerPort: 8250
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+                - CAP_SETFCAP
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/vault/config.hcl
+              subPath: config.hcl
+              readOnly: true
+            - name: consul-conf
+              mountPath: /etc/consul.d/config.json
+              subPath: config.json
+              readOnly: true
+            - name: data
+              mountPath: /vault/data
+      volumes:
+        - name: conf
+          configMap:
+            name: vault-conf
+            items:
+              - key: vault_conf
+                path: config.hcl
+        - name: data
+          persistentVolumeClaim:
+            claimName: vault-data
+        - name: consul-conf
+          configMap:
+            name: consul-conf
+            items:
+              - key: consul.json
+                path: config.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  selector:
+    app: vault
+  ports:
+    - name: default
+      port: 8200
+      protocol: TCP
+      targetPort: 8200
+    - name: cluster
+      port: 8201
+      protocol: TCP
+      targetPort: 8201
+    - name: oidc
+      port: 8250
+      protocol: TCP
+      targetPort: 8250
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vault
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 10
