@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  sshd:  # feels dumb, but oh well..
+    image: alpine:3.14.0
+    command: /startup.sh
+    privileged: true
+    tty: true
+    volumes:
+      - ssh:/root/.ssh
+      - ./data/ssh/bootstrap.sh:/startup.sh
+
+  vault:
+    image: vault:1.7.3
+    command: /startup.sh
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    tty: true
+    volumes:
+      - ssh:/root/.ssh
+      - ./data/vault/bootstrap.sh:/startup.sh
+
+volumes:
+  ssh:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
